@@ -42,3 +42,29 @@ skill é para o projeto todo.
 **Medido em três projetos reais** (dois .NET MVC e um app Flutter), comparando execuções
 com e sem a skill: relatórios de 5 a 8 vezes menores, com cenário de falha em 100% dos
 itens contra praticamente nenhum na execução sem ela.
+
+### `/ironbug-lazyloading-async`
+
+Mapeia o que falta para remover o lazy loading do EF Core e converter a aplicação para
+async de ponta a ponta. Entrega um mapa com plano faseado — não a refatoração inteira de
+uma vez, que em base legada não é revisável nem tem rollback parcial.
+
+Dispara com *"mapeie o que falta para tirar o lazy loading"*, *"quero deixar tudo async"*,
+*"remover os métodos síncronos"* — e também quando o pedido descreve só o sintoma (N+1,
+consulta dentro de laço, requisição lenta sob carga).
+
+**O que a distingue:** o inventário estático diz o que *pode* carregar preguiçosamente, não
+o que *carrega*. A skill combina o grep com instrumentação do evento `NavigatedLazyLoading`
+do EF, desligável por config e com custo zero quando desligada.
+
+Classifica em três grupos — **C** bloqueadores, **A** ganho de escala, **B** otimização — e
+manda atacar C primeiro: enquanto houver `.Result` no caminho, converter o resto para async
+não entrega o ganho que justifica a migração.
+
+Fecha respondendo "quanto falta" com três números: navegações que ainda disparam, pontos de
+sync-over-async restantes, e quanto do caminho de dados já é async.
+
+**Validada no SendCase** (6 projetos com proxies ligados, 198 navegações virtuais): 24 itens
+mapeados, 12 deles bloqueadores. O achado que justifica a Fase 2 apareceu no próprio teste —
+18 dos 21 candidatos a N+1 encontráveis por grep já tinham `Include`, ou seja, o resíduo real
+é invisível à análise estática.
