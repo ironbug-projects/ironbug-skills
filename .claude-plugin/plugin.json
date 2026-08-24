@@ -1,0 +1,20 @@
+{
+  "name": "ironbug-skills",
+  "description": "Skills da Ironbug para Claude Code: auditoria sistemática de projetos .NET e Flutter com relatório numerado e aplicação em lote",
+  "version": "1.0.0",
+  "author": {
+    "name": "Ironbug"
+  },
+  "keywords": [
+    "auditoria",
+    "varredura",
+    "performance",
+    "dotnet",
+    "flutter",
+    "code-review",
+    "pt-br"
+  ],
+  "skills": [
+    "./skills/ironbug-varredura"
+  ]
+}
