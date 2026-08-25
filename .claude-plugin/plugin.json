@@ -1,21 +1,26 @@
 {
   "name": "ironbug-skills",
-  "description": "Skills da Ironbug para Claude Code: auditoria sistemática de projetos .NET e Flutter, e mapeamento da saída de lazy loading / código síncrono",
-  "version": "1.1.0",
+  "description": "Skills da Ironbug para Claude Code: auditoria de projeto, mapa de saída de lazy loading/async, e aplicação do padrão de código da casa",
+  "version": "1.2.0",
   "author": {
     "name": "Ironbug"
   },
   "keywords": [
     "auditoria",
     "varredura",
+    "padronizacao",
     "performance",
+    "lazy-loading",
+    "async",
     "dotnet",
     "flutter",
-    "code-review",
+    "angularjs",
+    "ef-core",
     "pt-br"
   ],
   "skills": [
     "./skills/ironbug-varredura",
-    "./skills/ironbug-lazyloading-async"
+    "./skills/ironbug-lazyloading-async",
+    "./skills/ironbug-padronizacao"
   ]
 }
