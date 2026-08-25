@@ -49,8 +49,7 @@ Duas regras que evitam o efeito contrário:
 - Código que **não** faz I/O (cálculo, formatação, mapeamento) continua síncrono. Marcar como
   `async` sem `await` só adiciona máquina de estado e esconde o problema.
 
-Propague `CancellationToken` até a consulta. Sem ele, a requisição abandonada continua
-consumindo banco.
+Propague `CancellationToken` — regra detalhada no ponto 16.
 
 ## 5. Interpolação de string
 
@@ -178,6 +177,50 @@ A interface é o mesmo nome com `I` na frente: `ISalvadorDeAtendimento`.
 **Não** use os sufixos `Service`, `Repository`, `Manager` ou `Helper`. Este é o ponto em que
 o código atual do próprio Vinicius é inconsistente — ele usa as duas convenções, e o Erick
 não mistura. A regra unifica na forma em português.
+
+## 16. `CancellationToken` propagado até a consulta
+
+Todo método `async` que faz I/O recebe `CancellationToken cancellationToken` como **último
+parâmetro** e o repassa adiante, sem interromper a corrente em nenhum ponto.
+
+A corrente inteira:
+
+```csharp
+// 1. a action recebe — o ASP.NET Core injeta o token da requisição automaticamente
+public async Task<IActionResult> Listar([FromQuery] string? nome, CancellationToken cancellationToken)
+    => Success(await _listadorDeClientes.ListarAsync(nome, cancellationToken));
+
+// 2. o serviço recebe e repassa
+public async Task<IReadOnlyList<ClienteViewModel>> ListarAsync(string? nome, CancellationToken cancellationToken)
+    => await _context.Clientes.AsNoTracking()
+        .Where(c => nome == null || c.Nome.Contains(nome))
+        .Select(c => new ClienteViewModel { Id = c.Id, Nome = c.Nome })
+        .ToListAsync(cancellationToken);   // 3. chega na consulta
+```
+
+Sem isso, o usuário que fecha a aba ou troca de tela deixa a consulta rodando até o fim: o
+banco continua ocupado com um resultado que ninguém vai ler. Numa listagem pesada, sob carga,
+é trabalho desperdiçado que se acumula.
+
+**Aceita o token, mas não passa adiante, é pior do que não aceitar** — dá a aparência de que
+o cancelamento funciona. Se o parâmetro está na assinatura, ele tem que chegar na consulta.
+
+**Onde não propagar:**
+
+- **Depois do ponto sem volta.** Se a operação já cobrou um cliente, já enviou o documento ao
+  terceiro ou já publicou o evento, cancelar no meio deixa estado inconsistente. Dali em
+  diante a operação termina, independente do token.
+- **`SaveChangesAsync` que fecha uma escrita crítica.** Cancelar entre o commit e o passo
+  seguinte é pior que esperar. Avalie caso a caso — na dúvida, deixe terminar.
+- **Job em segundo plano** (Hangfire e afins) usa o token do próprio job, nunca o da
+  requisição, que já morreu.
+
+**Nunca** use `CancellationToken.None` só para o código compilar. Se não há token disponível,
+o problema está no chamador — que também precisa recebê-lo.
+
+**Nome do parâmetro:** `cancellationToken`, por extenso. É a exceção deliberada ao ponto 12
+(sem abreviação) e ao ponto 13 (nomes em português): é o nome que a plataforma usa em toda
+a documentação, e traduzir aqui atrapalha mais do que ajuda.
 
 ---
 

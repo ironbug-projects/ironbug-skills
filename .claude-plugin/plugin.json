@@ -1,7 +1,7 @@
 {
   "name": "ironbug-skills",
   "description": "Skills da Ironbug para Claude Code: auditoria de projeto, mapa de saída de lazy loading/async, e aplicação do padrão de código da casa",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": {
     "name": "Ironbug"
   },

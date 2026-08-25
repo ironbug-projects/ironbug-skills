@@ -41,6 +41,13 @@ grep -rn "\.ToList()\|\.FirstOrDefault()\|\.Any()\|\.Count()\|SaveChanges()" --i
 # sync-over-async
 grep -rn "\.Result\b\|\.Wait()\|GetAwaiter()\.GetResult()" --include="*.cs"
 
+# CancellationToken: compare os dois números — o segundo deveria acompanhar o primeiro
+grep -rc "async Task" --include="*.cs" . | awk -F: '{s+=$2} END {print "métodos async:", s}'
+grep -rc "CancellationToken" --include="*.cs" . | awk -F: '{s+=$2} END {print "com token:", s}'
+
+# consulta async que ignora o token que o método recebeu (o caso pior: aceita e não repassa)
+grep -rn "Async()" --include="*.cs" | grep -v "SaveChangesAsync()"
+
 # concatenação onde caberia interpolação
 grep -rn '"\s*+\s*\w' --include="*.cs"
 
@@ -86,8 +93,10 @@ Ordem que reduz retrabalho:
 
 1. **Nomenclatura e estrutura primeiro** (pontos 8, 15). Renomear classe e extrair serviço
    mexe em assinatura; fazer depois obriga a refazer o que já foi ajustado.
-2. **Depois o acesso a dados** (2, 3, 4). Projeção, `AsNoTracking` e async andam juntos no
-   mesmo método — tocar uma vez só.
+2. **Depois o acesso a dados** (2, 3, 4, 16). Projeção, `AsNoTracking`, async e
+   `CancellationToken` andam juntos no mesmo método — tocar uma vez só. O token em especial
+   muda a assinatura de toda a cadeia, então fazê-lo junto com a conversão async evita
+   assinar duas vezes o mesmo método.
 3. **Depois o resto do C#** (1, 5, 6, 7, 9, 10, 12, 13, 14).
 4. **AngularJS por último** (11), módulo a módulo. É o de maior volume e o mais mecânico.
 
